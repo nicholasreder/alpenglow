@@ -7,7 +7,7 @@ def download_s3(remote_fname, local_fname, bucket_name="alpenglowoptics"):
     """
     Download a file from S3 to our local file-system
     """
-    
+    s3 = boto3.resource('s3')
     b = s3.Bucket(bucket_name)
     b.download_file(remote_fname, local_fname)
 
