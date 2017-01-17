@@ -1,11 +1,18 @@
 import numpy as np
 import os
+import boto3
 
 
-## OTher file I/O stuff
+def download_s3(remote_fname, local_fname, bucket_name="alpenglowoptics"):
+    """
+    Download a file from S3 to our local file-system
+    """
+    s3 = boto3.resource('s3')
+    b = s3.Bucket(bucket_name)
+    b.download_file(remote_fname, local_fname)
 
 
-
+    
 ### DCIMG file i/o:
 
 """
@@ -25,7 +32,7 @@ SESSION_HEADER_DTYPE = [('session_length', 'i4'),
                         ('num_frames', 'i4'),
                         ('pixel_type', 'i4'),
                         ('num_columns', 'i4'),
-                        ('mystery1', 'i4'),
+                        ('camera_center', 'i4'),
                         ('bytes_per_row', 'i4'),
                         ('num_rows', 'i4'),
                         ('bytes_per_image', 'i4'),
@@ -47,7 +54,7 @@ SESSION_HEADER_DTYPE_INT2P24 = [
                                            # 144, 65537 in padding
                         ('num_frames', 'i4'),
                         ('pixel_type', 'i4'),
-                        ('mystery1', 'i4'),
+                        ('camera_center', 'i4'),
                         ('num_columns', 'i4'),
                         ('num_rows', 'i4'),      # num_rows switched position
                         ('bytes_per_row', 'i4'),
@@ -91,8 +98,6 @@ class DCIMGFile(object):
         frame_wo_footer = \
             self.frames_with_footer[0:(self._info['bytes_per_image'] /
                                        self._info['bytes_per_pixel']), ind]
-        # XXX fixme: For some reason 'mystery1' holds the number of columns
-        # (or is it? We need to keep an eye out for that)
         frame_data = frame_wo_footer.reshape([self._info['num_rows'],
                                               self._info['num_columns']])
 
