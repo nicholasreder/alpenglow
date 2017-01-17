@@ -93,9 +93,8 @@ class DCIMGFile(object):
                                        self._info['bytes_per_pixel']), ind]
         # XXX fixme: For some reason 'mystery1' holds the number of columns
         # (or is it? We need to keep an eye out for that)
-        frame_data = frame_wo_footer.reshape([self._info['mystery1'],
-                                              self._info['num_rows']],
-                                             order='F')
+        frame_data = frame_wo_footer.reshape([self._info['num_rows'],
+                                              self._info['num_columns']])
 
         return frame_data
 
@@ -108,7 +107,7 @@ class DCIMGFile(object):
     def _parse_header(self, header):
         info = {}
 
-        if not header.startswith('DCIMG'):
+        if not header.startswith(b'DCIMG'):
             raise RuntimeError("Not a valid DCIMG file")
 
         # the file header starts with an itentifying string and then seems to
