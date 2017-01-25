@@ -66,7 +66,7 @@ def apply_shift(image1, image2, shift, margin=100):
     rows1 = image1.shape[0]
     rows2 = image2.shape[0]
 
-    overlap=rows1 // 2 + shift[0]
+    overlap=rows2 // 2 + shift[0]
     registered = np.zeros((rows1 + rows2 - overlap, cols1), dtype=int)
     registered[:rows2-margin] = image2[:rows2-margin]
     if shift[1] > 0:
