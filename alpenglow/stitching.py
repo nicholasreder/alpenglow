@@ -43,7 +43,7 @@ def find_shift(image1, image2):
     return shift
 
 
-def apply_shift(image1, image2, shift):
+def apply_shift(image1, image2, shift, margin=100):
     """ 
     Apply a lateral shift between two images, stitching them together
     
@@ -68,9 +68,20 @@ def apply_shift(image1, image2, shift):
 
     overlap=rows1 // 2 + shift[0]
     registered = np.zeros((rows1 + rows2 - overlap, cols1), dtype=int)
-    registered[:rows2] = image2
+    registered[:rows2-margin] = image2[:rows2-margin]
     if shift[1] > 0:
-        registered[rows2:, :cols1-shift[1]] = image1[overlap:, shift[1]:] 
+        registered[rows2-margin:, :cols1-shift[1]] = image1[overlap-margin:, shift[1]:] 
     else:
-        registered[rows2:, abs(shift[1]):] = image1[overlap:, :shift[1]] 
-    return registered
+        registered[rows2-margin:, abs(shift[1]):] = image1[overlap-margin:, :shift[1]] 
+    
+    if margin > 0:
+        fade2 = image2[rows2 - margin:rows2] * np.arange(1, 0, -0.01)[:, np.newaxis]
+        fade1 = np.zeros_like(fade2)
+        if shift[1] > 0:
+            fade1[:, :cols1-shift[1]] = image1[overlap-margin:overlap, shift[1]:] * np.arange(0, 1, 0.01)[:, np.newaxis]
+        else:
+            fade1[:, abs(shift[1]):] = image1[overlap-margin:overlap, :shift[1]] * np.arange(0, 1, 0.01)[:, np.newaxis]
+
+        registered[rows2 - margin:rows2] = fade1 + fade2
+
+    return registered.astype(int)
