@@ -23,16 +23,8 @@ def stitch(image1, image2):
     shift, error, diffphase = register_translation(image1[:rows1//2, int(cols1//2-0.1*cols1):int(cols1//2+0.1*cols1)],
                                                    image2[rows2//2:, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)])
 
-    overlap=rows1//2+shift[0]
-    overlap
-
-    offset = transform.SimilarityTransform(translation=(overlap, -shift[1]))
-    no_offset = transform.SimilarityTransform(translation=(0, 0))
-
-    image1_transformed = transform.warp(image1, inverse_map=offset, output_shape=((2*rows1-overlap), (2*cols1-cols1-shift[1])))
-    image2_transformed = transform.warp(image2, inverse_map=no_offset, output_shape=((2*rows2-overlap), (2*cols2-cols2-shift[1])))
-
-    mask = (image1_transformed != 0) & (image2_transformed != 0)
-    registered = image1_transformed + image2_transformed
-    registered[mask] /= 2
-    return registered
+    overlap=rows1 // 2 + shift[0]
+    registered = np.zeros((rows1 + rows2 - overlap, cols1))
+    registered[:rows2] = image2
+    registered[rows2:, :cols1-shift[1]] = image1[overlap:, shift[1]:] 
+    return registered, shift
