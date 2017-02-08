@@ -10,8 +10,49 @@ def download_s3(remote_fname, local_fname, bucket_name="alpenglowoptics"):
     if not os.path.exists(local_fname):
         s3 = boto3.resource('s3')
         b = s3.Bucket(bucket_name)
-        b.download_file(remote_fname, local_fname)
+        b.download_file(remote_fname, local_fname)    
+
+def create_zstack(scan_name, strip_num, z_levels, sample_image_num = 55):
+    """
+    creates a zstack from a series of tiff frames for a single strip
     
+    Parameters
+    ----------
+    scan_name = the label for the scan files (string)
+    strip_num = the index of the strip (int)
+    z_levels = number of pixels in height dimension (int)
+    sample_image_num = arbitrarily chosen frame for reading dtype and shape for each frame (int)
+    
+    Returns
+    -------
+    ImageCollection
+    """
+  
+    #downloading frames from s3 to ec2 instance
+    for x in range(1, z_levels+1):
+        fname = "%06d_%06d.tif" % (strip_num, x) # XXX we need to enforce 06d, start from 0
+        download_s3('%s/%06d/' %(scan_name, strip_num) + fname, '../data/%s/%06d/' %(scan_name, strip_num) + fname)    
+
+    imread = delayed(skimage.io.imread, pure=True)  # Lazy version of imread
+    filenames = []
+    for x in range(0, z_levels):
+        fname = "%06d_%06d.tif" % (strip_num, x)
+        filenames.append('../data/%s/%06d/' %(scan_name, strip_num) + fname)
+
+    lazy_values = [imread(filename) for filename in filenames]    
+    sample = skimage.io.imread(filenames[sample_image_num])
+    arrays = [da.from_delayed(lazy_value,           # Construct a small Dask array
+                              dtype=sample.dtype,   # for every lazy value
+                              shape=sample.shape)
+              for lazy_value in lazy_values]
+
+    stack = da.stack(arrays, axis=0)  
+
+    for z in range(1,stack.shape[1]):
+        filename = 'zstack_%06d_%06d.tif' % (strip_num, z) 
+        tiff.imsave(filename, stack[:,z,:].compute())
+    zstack = ImageCollection('zstack_%06d_*.tif' % strip_num )
+    return zstack
 
     
 ### DCIMG file i/o:
