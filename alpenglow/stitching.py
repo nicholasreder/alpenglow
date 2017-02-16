@@ -46,8 +46,17 @@ def find_shift(image1, image2):
     cols2 = image2.shape[1]
     rows1 = image1.shape[0]
     rows2 = image2.shape[0]
-    shift, error, diffphase = register_translation(image1[:rows2//2, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)],
-                                                   image2[rows2//2:, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)])
+    
+    # If we have an odd number of rows, we get uneven indexing. 
+    # So we correct, by adding one more row:
+    if np.mod(rows2, 2):
+        im1_register = image1[:rows2//2+1, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
+    else:
+        im1_register = image1[:rows2//2, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
+
+    im2_register = image2[rows2//2:, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
+    
+    shift, error, diffphase = register_translation(im1_register, im2_register)
     return shift
 
 
@@ -68,13 +77,12 @@ def apply_shift(image1, image2, shift, margin=100):
     Stitched image
     
     """
-    
     cols1 = image1.shape[1]
     cols2 = image2.shape[1]
     rows1 = image1.shape[0]
     rows2 = image2.shape[0]
 
-    overlap=rows2 // 2 + shift[0]
+    overlap = rows2 // 2 + shift[0]
     registered = np.zeros((rows1 + rows2 - overlap, cols1), dtype=int)
     registered[:rows2-margin] = image2[:rows2-margin]
     if shift[1] > 0:
