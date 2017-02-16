@@ -8,6 +8,7 @@ from skimage import transform
 from skimage.feature import register_translation
 from skimage.io import imread_collection, ImageCollection
 import skimage.external.tifffile as tiff
+import glob as globby
 
 
 def stitch(image1, image2):
@@ -74,25 +75,51 @@ def apply_shift(image1, image2, shift, margin=100):
     rows1 = image1.shape[0]
     rows2 = image2.shape[0]
 
-    overlap=rows2 // 2 + shift[0]
+    overlap = int(rows2 // 2 + shift[0])
     registered = np.zeros((rows1 + rows2 - overlap, cols1), dtype=int)
     registered[:rows2-margin] = image2[:rows2-margin]
     if shift[1] > 0:
-        registered[rows2-margin:, :cols1-shift[1]] = image1[overlap-margin:, shift[1]:] 
+        registered[rows2-margin:, :cols1-int(shift[1])] = image1[overlap-margin:, int(shift[1]):] 
     else:
-        registered[rows2-margin:, abs(shift[1]):] = image1[overlap-margin:, :shift[1]] 
+        registered[rows2-margin:, abs(int(shift[1])):] = image1[overlap-margin:, :int(shift[1])] 
     
     if margin > 0:
         fade2 = image2[rows2 - margin:rows2] * np.arange(1, 0, -0.01)[:, np.newaxis]
         fade1 = np.zeros_like(fade2)
         if shift[1] > 0:
-            fade1[:, :cols1-shift[1]] = image1[overlap-margin:overlap, shift[1]:] * np.arange(0, 1, 0.01)[:, np.newaxis]
+            fade1[:, :cols1-int(shift[1])] = image1[overlap-margin:overlap, int(shift[1]):] * np.arange(0, 1, 0.01)[:, np.newaxis]
         else:
-            fade1[:, abs(shift[1]):] = image1[overlap-margin:overlap, :shift[1]] * np.arange(0, 1, 0.01)[:, np.newaxis]
+            fade1[:, abs(int(shift[1])):] = image1[overlap-margin:overlap, :int(shift[1])] * np.arange(0, 1, 0.01)[:, np.newaxis]
 
         registered[rows2 - margin:rows2] = fade1 + fade2
 
     return registered.astype(int)
+
+def test_image(path, first_strip, last_strip, percentile = 50):
+    """ 
+    Return test image at specified depth within z-stack
+    
+    Parameters
+    ----------
+    path : string
+        The string of the path 
+    first_strip, last_strip : ints
+        The index of the first strip and last strip to be stitched, *in order* (bottom, top)
+    percentile: int
+        Depth of test image within z-stack (larger number is deeper in stack)
+    Returns
+    -------
+    Stitched image (as array) at specified depth
+    """
+    p = int(np.percentile(np.arange(len(globby.glob1(path,"%06d_*.tif" % first_strip))), percentile))
+    image1 = tif.imread(path + '%06d_%06d.tif' % (first_strip, p))
+    image2 = tif.imread(path + '%06d_%06d.tif' % (first_strip + 1, p))
+    mosaic, shift = stitch(image1, image2) 
+    for x in range (first_strip + 2, last_strip): #
+        image2 = tif.imread(path + '%06d_%06d.tif' % (x, p))
+        mosaic, shift = stitch(mosaic, image2)
+    return mosaic
+
 
 
 def stitch_zstack(images_1, images_2, current_stack=None, out_path=None):
