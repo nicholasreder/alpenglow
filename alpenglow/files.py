@@ -1,6 +1,68 @@
 import numpy as np
 import os
 import boto3
+from io import BytesIO
+import skimage.external.tifffile as tif
+import tempfile
+
+
+def s3_to_array(f, cci):
+    """ 
+    Read a tif file straight from an S3 bucket (provided as a cottoncandy 
+    interface) into a numpy array
+   
+    Parameters
+    ----------
+    f : str
+        The name of the file in the bucket
+    
+    cci : cottoncandy interface
+    
+    
+    """
+    o = cci.download_object(f)
+    b = BytesIO(o)
+    t = tif.TiffFile(b)
+    a = t.asarray()
+    return a
+
+
+def read_strip_files(file_list, files_per_strip, ss, cci, dtype, shape):
+    """
+    From a given list of files read all the tifs in one strip
+    and return a memory-mapped array with the data.
+    
+    Parameters
+    ----------
+    file_list : list 
+        All the file names from one experiment, ordered 
+        according to strips 
+    
+    files_per_strip : int
+        How many files (sheets) in each strip.
+    
+    ss : int
+        A strip index.
+    
+    cci : a cottoncandy interface
+    
+    Return 
+    ------
+    Memory-mapped array with dimensions (z, width, sheets)
+    """
+    mm_fd, mm_fname = tempfile.mkstemp(suffix='.memmap')    
+    strip_mm = np.memmap(mm_fname, dtype=dtype, 
+                         shape=(files_per_strip, shape[0], shape[1]))
+    for ii in range(files_per_strip):
+        image_file = file_list[ss * files_per_strip + ii]
+        strip_mm[ii] = s3_to_array(image_file, cci)
+    
+    mm_roll = np.swapaxes(np.swapaxes(strip_mm, 0, 1), 1, 2)
+    # Strips are rastered back and forth, so we flip the odds
+    if not np.mod(ss, 2):
+        return mm_roll[..., ::-1]
+    return mm_roll
+
 
 
 def download_s3(remote_fname, local_fname, bucket_name="alpenglowoptics"):
