@@ -47,8 +47,17 @@ def find_shift(image1, image2):
     cols2 = image2.shape[1]
     rows1 = image1.shape[0]
     rows2 = image2.shape[0]
-    shift, error, diffphase = register_translation(image1[:rows2//2, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)],
-                                                   image2[rows2//2:, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)])
+    
+    # If we have an odd number of rows, we get uneven indexing. 
+    # So we correct, by adding one more row:
+    if np.mod(rows2, 2):
+        im1_register = image1[:rows2//2+1, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
+    else:
+        im1_register = image1[:rows2//2, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
+
+    im2_register = image2[rows2//2:, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
+    
+    shift, error, diffphase = register_translation(im1_register, im2_register)
     return shift
 
 
@@ -69,7 +78,6 @@ def apply_shift(image1, image2, shift, margin=100):
     Stitched image
     
     """
-    
     cols1 = image1.shape[1]
     cols2 = image2.shape[1]
     rows1 = image1.shape[0]
@@ -87,7 +95,8 @@ def apply_shift(image1, image2, shift, margin=100):
         fade2 = image2[rows2 - margin:rows2] * np.arange(1, 0, -0.01)[:, np.newaxis]
         fade1 = np.zeros_like(fade2)
         if shift[1] > 0:
-            fade1[:, :cols1-int(shift[1])] = image1[overlap-margin:overlap, int(shift[1]):] * np.arange(0, 1, 0.01)[:, np.newaxis]
+            fade1[:, :cols1-int(shift[1])] = (image1[overlap-margin:overlap, int(shift[1]):] * 
+                                              np.arange(0, 1, 0.01)[:, np.newaxis])
         else:
             fade1[:, abs(int(shift[1])):] = image1[overlap-margin:overlap, :int(shift[1])] * np.arange(0, 1, 0.01)[:, np.newaxis]
 
