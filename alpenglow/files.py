@@ -4,8 +4,36 @@ import boto3
 from io import BytesIO
 import skimage.external.tifffile as tif
 import tempfile
+from PIL import Image
 
 
+def array_to_s3(arr, s3_fname ,cci):
+    """
+    Place an array directly into an S3 tiff file
+    
+    Parameters
+    ----------
+    arr : 2D numpy array/memmap
+    
+    s3_fname : str
+        Full path to the S3 object to create (e.g., '/test/test.tif'
+    
+    cci : cottoncandy interface object    
+    """
+    # Create a PIL image object:
+    im = Image.fromarray(arr)
+    # This stands in place of the file to save to:
+    output = BytesIO()
+    # Do the saving: 
+    im.save(output, format="tiff")
+    # Need to seek back to the beginning of the file:
+    output.seek(0)
+    # This will create the object if it doesn't exist:
+    obj = cci.get_object(s3_fname)
+    # Off we go:
+    obj.upload_fileobj(output)
+
+    
 def s3_to_array(f, cci):
     """ 
     Read a tif file straight from an S3 bucket (provided as a cottoncandy 
