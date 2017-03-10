@@ -87,7 +87,7 @@ def read_strip_files(file_list, files_per_strip, ss, cci, dtype, shape):
     
     mm_roll = np.swapaxes(np.swapaxes(strip_mm, 0, 1), 1, 2)
     # Strips are rastered back and forth, so we flip the odds
-    if not np.mod(ss, 2):
+    if np.mod(ss, 2):
         return mm_roll[..., ::-1]
     return mm_roll
 
