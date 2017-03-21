@@ -12,7 +12,7 @@ import skimage.external.tifffile as tiff
 import glob as globby
 
 
-def stitch(image1, image2):
+def stitch(image1, image2, margin=100):
     """
     stitches two images together
     
@@ -26,7 +26,7 @@ def stitch(image1, image2):
     Stitched 2D numpy array
     """
     shift = find_shift(image1, image2)
-    registered = apply_shift(image1, image2, shift)
+    registered = apply_shift(image1, image2, shift, margin=margin)
     return registered, shift
 
 
@@ -93,13 +93,13 @@ def apply_shift(image1, image2, shift, margin=100):
         registered[rows2-margin:, abs(int(shift[1])):] = image1[overlap-margin:, :int(shift[1])] 
     
     if margin > 0:
-        fade2 = image2[rows2 - margin:rows2] * np.arange(1, 0, -0.01)[:, np.newaxis]
+        fade2 = image2[rows2 - margin:rows2] * np.arange(1, 0, -(1/margin))[:, np.newaxis]
         fade1 = np.zeros_like(fade2)
         if shift[1] >= 0:
             fade1[:, :cols1-int(shift[1])] = (image1[overlap-margin:overlap, int(shift[1]):] * 
-                                              np.arange(0, 1, 0.01)[:, np.newaxis])
+                                              np.arange(0, 1, (1/margin))[:, np.newaxis])
         else:
-            fade1[:, abs(int(shift[1])):] = image1[overlap-margin:overlap, :int(shift[1])] * np.arange(0, 1, 0.01)[:, np.newaxis]
+            fade1[:, abs(int(shift[1])):] = image1[overlap-margin:overlap, :int(shift[1])] * np.arange(0, 1, (1/margin))[:, np.newaxis]
 
         registered[rows2 - margin:rows2] = fade1 + fade2
 
