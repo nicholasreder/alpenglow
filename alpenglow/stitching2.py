@@ -12,7 +12,7 @@ import skimage.external.tifffile as tiff
 import glob as globby
 
 
-def stitch(image1, image2, margin=100):
+def stitch(image1, image2, margin):
     """
     stitches two images together
     
@@ -43,26 +43,14 @@ def find_shift(image1, image2):
     -------
     tuple : lateral shifts (x, y)
     """
-    
-    cols1 = image1.shape[1]
-    cols2 = image2.shape[1]
-    rows1 = image1.shape[0]
     rows2 = image2.shape[0]
-    
-    # If we have an odd number of rows, we get uneven indexing. 
-    # So we correct, by adding one more row:
-    if np.mod(rows2, 2):
-        im1_register = image1[:rows2//2+1, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
-    else:
-        im1_register = image1[:rows2//2, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
-
-    im2_register = image2[rows2//2:, int(cols2//2-0.1*cols2):int(cols2//2+0.1*cols2)]
-    
-    shift, error, diffphase = register_translation(im1_register, im2_register)
+    rows2_crop = rows2 - image1.shape[0]
+    im2_cropped = image2[rows2_crop:,:]
+    shift, error, diffphase = register_translation(image1, im2_cropped)
     return shift
 
 
-def apply_shift(image1, image2, shift, margin=100):
+def apply_shift(image1, image2, shift, margin):
     """ 
     Apply a lateral shift between two images, stitching them together
     
@@ -169,7 +157,7 @@ def calc_coef(images_1, images_2, nchan, chan):
     return coef, shift
 
 
-def output_zstack(images_1, images_2, coef, shift, chop_index, chan=0, current_stack=None, out_path=None):
+def output_zstack(images_1, images_2, coef, shift, margin, chop_index, chan=0, current_stack=None, out_path=None):
     if isinstance(images_1, skimage.io.collection.ImageCollection):
         # Do the relatively slow thing, but save the results
         if out_path is None:
@@ -198,7 +186,7 @@ def output_zstack(images_1, images_2, coef, shift, chop_index, chan=0, current_s
         return registered
 
 
-def stitch_zstack(images_1, images_2, nchan, chan=0, current_stack=None, out_path=None):
+def stitch_zstack(images_1, images_2, nchan, chan, margin, current_stack=None, out_path=None):
     coef, shift = calc_coef(images_1, images_2, nchan, chan)
     if np.std(shift[:, 0]) > np.sqrt(len(images_1) // nchan): 
         warnings.warn("I am having trouble finding a good registration. Defaulting to no shift")
@@ -206,10 +194,10 @@ def stitch_zstack(images_1, images_2, nchan, chan=0, current_stack=None, out_pat
         coef = np.zeros(coef.shape)
     shift_last = int(np.round(np.polyval(coef, len(images_1))))
     rows = images_1[0].shape[0]+images_2[0].shape[0]
-    overlap = (images_2[0].shape[0]//2)+shift_last
+    overlap = shift_last
     chop_index = int(rows - overlap)
     if nchan == 1:
-        return output_zstack(images_1, images_2, coef, shift, chop_index, current_stack=current_stack, out_path=out_path)
+        return output_zstack(images_1, images_2, coef, shift, margin, chop_index, chan, current_stack=current_stack, out_path=out_path)
 
     if nchan > 1:       
         if isinstance(images_1, skimage.io.collection.ImageCollection):
