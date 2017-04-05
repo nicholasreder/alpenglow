@@ -94,7 +94,7 @@ def apply_shift(image1, image2, shift, margin):
     return registered.astype(int)
 
 
-def test_image(path, first_strip, last_strip, percentile = 50):
+def test_image(path, first_strip, last_strip, margin = 100, percentile = 50):
     """ 
     Return test image at specified depth within z-stack
     
@@ -113,10 +113,10 @@ def test_image(path, first_strip, last_strip, percentile = 50):
     p = int(np.percentile(np.arange(len(globby.glob1(path,"%06d_*.tif" % first_strip))), percentile))
     image1 = tif.imread(path + '%06d_%06d.tif' % (first_strip, p))
     image2 = tif.imread(path + '%06d_%06d.tif' % (first_strip + 1, p))
-    mosaic, shift = stitch(image1, image2) 
+    mosaic, shift = stitch(image1, image2, margin) 
     for x in range (first_strip + 2, last_strip): #
         image2 = tif.imread(path + '%06d_%06d.tif' % (x, p))
-        mosaic, shift = stitch(mosaic, image2)
+        mosaic, shift = stitch(mosaic, image2, margin)
     return mosaic
 
 
