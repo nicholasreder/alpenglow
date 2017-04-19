@@ -167,7 +167,8 @@ def output_zstack(images_1, images_2, coef, shift, margin, chop_index, chan=0, c
         for z_level in range(len(images_1)):
             shift_zero = int(np.round(np.polyval(coef, z_level)))
             shift_one = int(np.round(np.mean(shift[:,1])))
-            registered = apply_shift(images_1[z_level], images_2[z_level], [shift_zero, shift_one])
+            registered = apply_shift(images_1[z_level], images_2[z_level], [shift_zero, shift_one], 
+                                     margin)
             tiff.imsave(op.join(out_path, "mosaic_chan%06d_%06d_%06d.tif"%(chan, current_stack, z_level+1)), 
                         registered[:chop_index]) 
         return ImageCollection(op.join(out_path, "mosaic_chan%06d_%06d_*.tif"%(chan, current_stack)),
