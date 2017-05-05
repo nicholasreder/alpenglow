@@ -1,3 +1,5 @@
+"""Setup file for the alpenglow project"""
+
 import os
 from setuptools import setup, find_packages
 PACKAGES = find_packages()
