@@ -1,0 +1,26 @@
+Metadata-Version: 1.1
+Name: alpenglow
+Version: 0.2.dev0
+Summary: alpenglow: stitching light-sheet images
+Home-page: http://github.com/nicholasreder/alpenglow
+Author: Nicholas Reder
+Author-email: nreder@uw.edu
+License: MIT
+Description: 
+        Alpenglow
+        ========
+        Please go to the repository README_ for further details.
+        .. _README: https://github.com/nicholasreder/alpenglow/blob/master/README.md
+        
+Platform: OS Independent
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering
+Requires: numpy
+Requires: skimage
+Requires: boto3
+Requires: PIL

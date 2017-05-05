@@ -11,6 +11,8 @@ import skimage as skimage
 import numpy as np
 import shutil as sh
 import os
+import os.path as op
+import tempfile
 import boto3
 from scipy import optimize
 import alpenglow.stitching as ast
@@ -24,6 +26,7 @@ camera_invert = skimage.util.invert(camera)
 # two channel imaging dataset
 # creates 10 images in z-stack, crisp to blurry with increasing n
 intervals = np.linspace(0.0,3.0,num=10)
+tdir = tempfile.TemporaryDirectory()
 for z in range(1,11):
     for number in intervals:
         image = (skimage.filters.gaussian(camera, number)*255).astype('uint8')
@@ -44,6 +47,6 @@ for z in range(1,11):
         camera_2chan_strip2 = np.vstack((strip2, strip2_invert))
         camera_2chan_strip3 = np.vstack((strip3, strip3_invert))
         z = int(number*3+1)
-        tiff.imsave("camera_2chan_strip1_z%01d.tif" % z , camera_2chan_strip1)
-        tiff.imsave("camera_2chan_strip2_z%01d.tif" % z , camera_2chan_strip2)
-        tiff.imsave("camera_2chan_strip3_z%01d.tif" % z , camera_2chan_strip3)
+        tiff.imsave(op.join(tdir.name, "camera_2chan_strip1_z%01d.tif" % z) , camera_2chan_strip1)
+        tiff.imsave(op.join(tdir.name, "camera_2chan_strip2_z%01d.tif" % z) , camera_2chan_strip2)
+        tiff.imsave(op.join(tdir.name, "camera_2chan_strip3_z%01d.tif" % z) , camera_2chan_strip3)
