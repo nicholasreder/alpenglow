@@ -1,2 +1,2 @@
 # alpenglow
-We should put some useful information here
+LSMstitch software for stitching a 3D volume from individual tiff frames captured by our custom-built light-sheet microscope. 
